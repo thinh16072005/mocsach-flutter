@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.bookstore</groupId>
+    <groupId>com.mocsach</groupId>
     <artifactId>api-gateway</artifactId>
     <version>1.0.0</version>
     <name>api-gateway</name>

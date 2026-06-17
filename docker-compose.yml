@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: bookstore-sqlserver
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "14333:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ${DB_PASSWORD} -C -Q 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: bookstore-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SERVICES_AUTH_URL: http://auth-service:8081
+      SERVICES_USER_URL: http://user-service:8082
+      # SERVICES_BOOK_URL: http://book-service:8083
+      # SERVICES_ORDER_URL: http://order-service:8084
+      # SERVICES_PAYMENT_URL: http://payment-service:8085
+      # SERVICES_COUPON_FEEDBACK_URL: http://coupon-feedback-service:8086
+    depends_on:
+      - auth-service
+      - user-service
+      # - book-service
+      # - order-service
+      # - payment-service
+      # - coupon-feedback-service
+
+  auth-service:
+    build: ./auth-service
+    container_name: bookstore-auth
+    ports:
+      - "8081:8081"
+    environment:
+      DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_auth;encrypt=false;trustServerCertificate=true
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL}
+      SERVICES_USER_URL: http://user-service:8082
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  user-service:
+    build: ./user-service
+    container_name: bookstore-user
+    ports:
+      - "8082:8082"
+    environment:
+      DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_user;encrypt=false;trustServerCertificate=true
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+#   book-service:
+#     build: ./book-service
+#     container_name: bookstore-book
+#     ports:
+#       - "8083:8083"
+#     environment:
+#       DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_book;encrypt=false;trustServerCertificate=true
+#       DB_USERNAME: ${DB_USERNAME}
+#       DB_PASSWORD: ${DB_PASSWORD}
+#       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+#       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+#       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+#     depends_on:
+#       sqlserver:
+#         condition: service_healthy
+# 
+#   order-service:
+#     build: ./order-service
+#     container_name: bookstore-order
+#     ports:
+#       - "8084:8084"
+#     environment:
+#       DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_order;encrypt=false;trustServerCertificate=true
+#       DB_USERNAME: ${DB_USERNAME}
+#       DB_PASSWORD: ${DB_PASSWORD}
+#       SERVICES_BOOK_URL: http://book-service:8083
+#     depends_on:
+#       sqlserver:
+#         condition: service_healthy
+# 
+#   payment-service:
+#     build: ./payment-service
+#     container_name: bookstore-payment
+#     ports:
+#       - "8085:8085"
+#     environment:
+#       DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_payment;encrypt=false;trustServerCertificate=true
+#       DB_USERNAME: ${DB_USERNAME}
+#       DB_PASSWORD: ${DB_PASSWORD}
+#       PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID}
+#       PAYOS_API_KEY: ${PAYOS_API_KEY}
+#       PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY}
+#       PAYOS_RETURN_URL: ${PAYOS_RETURN_URL:-https://pay.payos.vn/web/}
+#       PAYOS_CANCEL_URL: ${PAYOS_CANCEL_URL:-https://pay.payos.vn/web/}
+#       SERVICES_ORDER_URL: http://order-service:8084
+#     depends_on:
+#       sqlserver:
+#         condition: service_healthy
+#       order-service:
+#         condition: service_started
+# 
+#   coupon-feedback-service:
+#     build: ./coupon-feedback-service
+#     container_name: bookstore-coupon-feedback
+#     ports:
+#       - "8086:8086"
+#     environment:
+#       DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_other;encrypt=false;trustServerCertificate=true
+#       DB_USERNAME: ${DB_USERNAME}
+#       DB_PASSWORD: ${DB_PASSWORD}
+#     depends_on:
+#       sqlserver:
+#         condition: service_healthy
+
+volumes:
+  sqlserver_data:

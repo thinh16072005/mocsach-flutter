@@ -32,4 +32,4 @@ management:
 
 logging:
   level:
-    com.bookstore.user: DEBUG
+    com.mocsach.user: DEBUG

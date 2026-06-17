@@ -64,4 +64,4 @@ management:
 
 logging:
   level:
-    com.bookstore.gateway: DEBUG
+    com.mocsach.gateway: DEBUG
