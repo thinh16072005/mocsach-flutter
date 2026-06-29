@@ -73,21 +73,21 @@ services:
       sqlserver:
         condition: service_healthy
 
-#   book-service:
-#     build: ./book-service
-#     container_name: bookstore-book
-#     ports:
-#       - "8083:8083"
-#     environment:
-#       DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_book;encrypt=false;trustServerCertificate=true
-#       DB_USERNAME: ${DB_USERNAME}
-#       DB_PASSWORD: ${DB_PASSWORD}
-#       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-#       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-#       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-#     depends_on:
-#       sqlserver:
-#         condition: service_healthy
+  book-service:
+   build: ./book-service
+   container_name: bookstore-book
+   ports:
+     - "8083:8083"
+   environment:
+     DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_book;encrypt=false;trustServerCertificate=true
+     DB_USERNAME: ${DB_USERNAME}
+     DB_PASSWORD: ${DB_PASSWORD}
+     CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+     CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+     CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+   depends_on:
+     sqlserver:
+       condition: service_healthy
 # 
 #   order-service:
 #     build: ./order-service
@@ -124,18 +124,18 @@ services:
 #       order-service:
 #         condition: service_started
 # 
-#   coupon-feedback-service:
-#     build: ./coupon-feedback-service
-#     container_name: bookstore-coupon-feedback
-#     ports:
-#       - "8086:8086"
-#     environment:
-#       DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_other;encrypt=false;trustServerCertificate=true
-#       DB_USERNAME: ${DB_USERNAME}
-#       DB_PASSWORD: ${DB_PASSWORD}
-#     depends_on:
-#       sqlserver:
-#         condition: service_healthy
+  coupon-feedback-service:
+   build: ./coupon-feedback-service
+   container_name: bookstore-coupon-feedback
+   ports:
+     - "8086:8086"
+   environment:
+     DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=db_other;encrypt=false;trustServerCertificate=true
+     DB_USERNAME: ${DB_USERNAME}
+     DB_PASSWORD: ${DB_PASSWORD}
+   depends_on:
+     sqlserver:
+       condition: service_healthy
 
 volumes:
   sqlserver_data:
