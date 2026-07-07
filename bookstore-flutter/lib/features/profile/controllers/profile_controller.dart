@@ -13,6 +13,7 @@ class ProfileController extends GetxController {
   final user = Rxn<UserModel>();
   final isLoading = false.obs;
   final errorMessage = ''.obs;
+  final isLoggedIn = true.obs;
 
   @override
   void onInit() {
@@ -22,7 +23,11 @@ class ProfileController extends GetxController {
 
   Future<void> fetchProfile() async {
     final userId = await TokenStorage.getUserId();
-    if (userId == null) return;
+    if (userId == null) {
+      isLoggedIn.value = false;
+      return;
+    }
+    isLoggedIn.value = true;
     isLoading.value = true;
     try {
       final response = await _dio.get(ApiEndpoints.userById(userId));

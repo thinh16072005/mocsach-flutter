@@ -7,7 +7,7 @@ import 'features/auth/screens/register_screen.dart';
 import 'features/auth/screens/forgot_password_screen.dart';
 import 'features/auth/screens/change_password_screen.dart';
 import 'features/auth/screens/active_account_screen.dart';
-import 'features/home/screens/home_screen.dart';
+import 'features/home/screens/main_layout_screen.dart';
 import 'features/books/screens/products_screen.dart';
 import 'features/books/screens/book_detail_screen.dart';
 import 'features/cart/screens/cart_screen.dart';
@@ -61,7 +61,7 @@ class BookStoreApp extends StatelessWidget {
         GetPage(name: '/change-password', page: () => const ChangePasswordScreen()),
         GetPage(name: '/active-account', page: () => const ActiveAccountScreen()),
         // Customer
-        GetPage(name: '/home', page: () => const HomeScreen()),
+        GetPage(name: '/home', page: () => const MainLayoutScreen()),
         GetPage(name: '/products', page: () => const ProductsScreen()),
         GetPage(name: '/book-detail', page: () => const BookDetailScreen()),
         GetPage(name: '/cart', page: () => const CartScreen()),
@@ -108,11 +108,10 @@ class _SplashRouterState extends State<_SplashRouter> {
         // Dùng chung logic điều hướng với màn Login.
         await Get.find<AuthController>().navigateAfterAuth();
       } else {
-        Get.offAllNamed('/login');
+        Get.offAllNamed('/home');
       }
     } catch (e) {
-      // Lỗi đọc secure storage → đưa về login thay vì kẹt ở splash.
-      Get.offAllNamed('/login');
+      Get.offAllNamed('/home');
     }
   }
 

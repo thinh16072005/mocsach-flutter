@@ -8,9 +8,19 @@ import '../../../shared/widgets/book_card.dart';
 import '../../../shared/widgets/section_title.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/parallax_header.dart';
+import '../controllers/main_layout_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  void _navigateToTab(int index, String routeName) {
+    try {
+      final mainLayoutController = Get.find<MainLayoutController>();
+      mainLayoutController.changeTab(index);
+    } catch (_) {
+      Get.toNamed(routeName);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +35,13 @@ class HomeScreen extends StatelessWidget {
           ParallaxSliverHeader(
             expandedHeight: 280,
             collapsedTitle: 'BookStore',
-            actions: const [_ThemeToggle(), _CartAction(), _ProfileAction(), SizedBox(width: 4)],
+            actions: const [SizedBox(width: 4)],
             background: Obx(() {
               final hero =
                   controller.bestsellers.isNotEmpty ? controller.bestsellers.first : null;
               return _HeroBackground(coverUrl: hero?.thumbnailUrl);
             }),
-            foreground: _HeroContent(onExplore: () => Get.toNamed('/products')),
+            foreground: _HeroContent(onExplore: () => _navigateToTab(1, '/products')),
           ),
 
           // Sách bán chạy
@@ -39,7 +49,7 @@ class HomeScreen extends StatelessWidget {
             child: SectionTitle(
               title: 'Sách bán chạy',
               actionLabel: 'Xem tất cả',
-              onAction: () => Get.toNamed('/products'),
+              onAction: () => _navigateToTab(1, '/products'),
             ),
           ),
           SliverToBoxAdapter(
@@ -59,7 +69,7 @@ class HomeScreen extends StatelessWidget {
             child: SectionTitle(
               title: 'Mới phát hành',
               actionLabel: 'Xem tất cả',
-              onAction: () => Get.toNamed('/products'),
+              onAction: () => _navigateToTab(1, '/products'),
             ),
           ),
           SliverToBoxAdapter(
@@ -93,7 +103,7 @@ class HomeScreen extends StatelessWidget {
                           onPressed: () {
                             controller.selectedGenreId.value = g['idGenre'] as int;
                             controller.fetchBooks(reset: true);
-                            Get.toNamed('/products');
+                            _navigateToTab(1, '/products');
                           },
                         );
                       }).toList(),
@@ -168,12 +178,7 @@ class _HeroContent extends StatelessWidget {
           'Khám phá thế giới\nqua từng trang sách',
           style: textTheme.displaySmall?.copyWith(color: Colors.white, height: 1.2),
         ),
-        const SizedBox(height: 12),
-        ElevatedButton.icon(
-          onPressed: onExplore,
-          icon: const Icon(Icons.auto_stories, size: 18),
-          label: const Text('Xem tất cả sách'),
-        ),
+        const SizedBox(height: 12)
       ],
     );
   }
@@ -235,7 +240,14 @@ class _CartAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
         icon: const Icon(Icons.shopping_bag_outlined),
-        onPressed: () => Get.toNamed('/cart'),
+        onPressed: () {
+          try {
+            final mainLayoutController = Get.find<MainLayoutController>();
+            mainLayoutController.changeTab(2);
+          } catch (_) {
+            Get.toNamed('/cart');
+          }
+        },
       );
 }
 
@@ -244,6 +256,13 @@ class _ProfileAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
         icon: const Icon(Icons.person_outline),
-        onPressed: () => Get.toNamed('/profile'),
+        onPressed: () {
+          try {
+            final mainLayoutController = Get.find<MainLayoutController>();
+            mainLayoutController.changeTab(3);
+          } catch (_) {
+            Get.toNamed('/profile');
+          }
+        },
       );
 }

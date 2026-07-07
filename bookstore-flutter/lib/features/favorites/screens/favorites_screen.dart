@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/favorite_controller.dart';
+import '../../home/controllers/main_layout_controller.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -26,7 +27,13 @@ class FavoritesScreen extends StatelessWidget {
                 const Text('Chưa có sách yêu thích nào.'),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: () => Get.toNamed('/products'),
+                  onPressed: () {
+                    try {
+                      Get.find<MainLayoutController>().changeTab(1);
+                    } catch (_) {
+                      Get.toNamed('/products');
+                    }
+                  },
                   child: const Text('Khám phá sách'),
                 ),
               ],

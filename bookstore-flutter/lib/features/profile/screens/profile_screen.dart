@@ -19,13 +19,37 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Tài khoản'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => authController.logout(),
-          ),
+          Obx(() => controller.isLoggedIn.value
+              ? IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () => authController.logout(),
+                )
+              : const SizedBox.shrink()),
         ],
       ),
       body: Obx(() {
+        if (!controller.isLoggedIn.value) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.account_circle, size: 80, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text('Bạn chưa đăng nhập', style: TextStyle(fontSize: 18)),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => Get.toNamed('/login'),
+                  icon: const Icon(Icons.login),
+                  label: const Text('Đăng nhập ngay'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }

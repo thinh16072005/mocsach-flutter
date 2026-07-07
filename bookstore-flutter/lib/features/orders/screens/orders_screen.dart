@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/order_controller.dart';
 import '../../../core/models/order_model.dart';
+import '../../home/controllers/main_layout_controller.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -54,7 +55,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 const Text('Bạn chưa có đơn hàng nào.'),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: () => Get.toNamed('/products'),
+                  onPressed: () {
+                    try {
+                      Get.find<MainLayoutController>().changeTab(1);
+                    } catch (_) {
+                      Get.toNamed('/products');
+                    }
+                  },
                   child: const Text('Mua sách'),
                 ),
               ],
