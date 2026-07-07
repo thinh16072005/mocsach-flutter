@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../books/controllers/book_controller.dart';
 import '../../../core/models/book_model.dart';
-import '../../../shared/theme/theme_controller.dart';
 import '../../../shared/widgets/book_card.dart';
 import '../../../shared/widgets/section_title.dart';
 import '../../../shared/widgets/shimmer_loading.dart';

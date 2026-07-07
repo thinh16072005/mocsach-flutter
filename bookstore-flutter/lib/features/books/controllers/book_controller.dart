@@ -17,6 +17,8 @@ class BookController extends GetxController {
   final totalPages = 1.obs;
   final searchName = ''.obs;
   final selectedGenreId = RxnInt();
+  final isGridView = true.obs;
+  final selectedSort = RxnString();
 
   // Admin dùng list/paging riêng (size lớn hơn), không dùng chung customer search.
   final adminBooks = <BookModel>[].obs;
@@ -47,12 +49,29 @@ class BookController extends GetxController {
         if (selectedGenreId.value != null) 'genreId': selectedGenreId.value,
         'page': currentPage.value,
         'size': 10,
+        if (selectedSort.value != null) 'sort': selectedSort.value,
       });
       final body = response.data;
       if (body['success'] == true) {
         final pageData = body['data'];
         final content = pageData['content'] as List;
-        books.assignAll(content.map((e) => BookModel.fromJson(e)).toList());
+        var contentList = content.map((e) => BookModel.fromJson(e)).toList();
+        
+        // Client-side sorting fallback
+        if (selectedSort.value != null) {
+          final sortVal = selectedSort.value!;
+          if (sortVal == 'sellPrice,asc') {
+            contentList.sort((a, b) => a.sellPrice.compareTo(b.sellPrice));
+          } else if (sortVal == 'nameBook,asc') {
+            contentList.sort((a, b) => a.nameBook.compareTo(b.nameBook));
+          } else if (sortVal == 'nameBook,desc') {
+            contentList.sort((a, b) => b.nameBook.compareTo(a.nameBook));
+          } else if (sortVal == 'avgRating,desc') {
+            contentList.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+          }
+        }
+        
+        books.assignAll(contentList);
         totalPages.value = pageData['totalPages'] ?? 1;
       }
     } on DioException catch (e) {
@@ -119,6 +138,11 @@ class BookController extends GetxController {
   void search(String name, {int? genreId}) {
     searchName.value = name;
     selectedGenreId.value = genreId;
+    fetchBooks(reset: true);
+  }
+
+  void changeSort(String? sort) {
+    selectedSort.value = sort;
     fetchBooks(reset: true);
   }
 
