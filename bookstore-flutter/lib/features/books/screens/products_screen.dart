@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -16,18 +15,33 @@ class ProductsScreen extends StatefulWidget {
 
 class _ProductsScreenState extends State<ProductsScreen> {
   final controller = Get.put(BookController());
-  Timer? _debounce;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () {
-      controller.search(value, genreId: controller.selectedGenreId.value);
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
+      controller.loadMoreBooks();
+    }
+  }
+
+  void _toggleLayout() {
+    final currentOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+    controller.isGridView.toggle();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(currentOffset);
+      }
     });
   }
 
@@ -50,7 +64,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     ? Icons.view_list_rounded
                     : Icons.grid_view_rounded),
                 tooltip: controller.isGridView.value ? 'Xem dạng danh sách' : 'Xem dạng lưới',
-                onPressed: () => controller.isGridView.toggle(),
+                onPressed: _toggleLayout,
               )),
           IconButton(
             icon: const Icon(Icons.tune_rounded),
@@ -88,18 +102,24 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   Expanded(
                     child: controller.isGridView.value
                         ? GridView.builder(
+                            controller: _scrollController,
                             padding: const EdgeInsets.all(16),
                             gridDelegate: _gridDelegate,
                             itemCount: controller.books.length,
                             itemBuilder: (ctx, i) => BookCard(book: controller.books[i]),
                           )
                         : ListView.builder(
+                            controller: _scrollController,
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             itemCount: controller.books.length,
                             itemBuilder: (ctx, i) => _DetailedBookCard(book: controller.books[i]),
                           ),
                   ),
-                  _Pagination(controller: controller),
+                  if (controller.isLoadingMore.value)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
                 ],
               );
             }),
@@ -319,37 +339,7 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-class _Pagination extends StatelessWidget {
-  final BookController controller;
-  const _Pagination({required this.controller});
 
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton.filledTonal(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: controller.currentPage.value > 0 ? controller.prevPage : null,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                    'Trang ${controller.currentPage.value + 1} / ${controller.totalPages.value}'),
-              ),
-              IconButton.filledTonal(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: controller.currentPage.value < controller.totalPages.value - 1
-                    ? controller.nextPage
-                    : null,
-              ),
-            ],
-          ),
-        ));
-  }
-}
 
 class _DetailedBookCard extends StatelessWidget {
   final BookModel book;

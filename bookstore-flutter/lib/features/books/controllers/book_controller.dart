@@ -19,6 +19,7 @@ class BookController extends GetxController {
   final selectedGenreId = RxnInt();
   final isGridView = true.obs;
   final selectedSort = RxnString();
+  final isLoadingMore = false.obs;
 
   // Admin dùng list/paging riêng (size lớn hơn), không dùng chung customer search.
   final adminBooks = <BookModel>[].obs;
@@ -41,7 +42,9 @@ class BookController extends GetxController {
       currentPage.value = 0;
       books.clear();
     }
-    isLoading.value = true;
+    if (currentPage.value == 0) {
+      isLoading.value = true;
+    }
     errorMessage.value = '';
     try {
       final response = await _dio.get(ApiEndpoints.bookSearch, queryParameters: {
@@ -71,7 +74,11 @@ class BookController extends GetxController {
           }
         }
         
-        books.assignAll(contentList);
+        if (currentPage.value == 0) {
+          books.assignAll(contentList);
+        } else {
+          books.addAll(contentList);
+        }
         totalPages.value = pageData['totalPages'] ?? 1;
       }
     } on DioException catch (e) {
@@ -144,6 +151,20 @@ class BookController extends GetxController {
   void changeSort(String? sort) {
     selectedSort.value = sort;
     fetchBooks(reset: true);
+  }
+
+  Future<void> loadMoreBooks() async {
+    if (isLoading.value || isLoadingMore.value || currentPage.value >= totalPages.value - 1) {
+      return;
+    }
+    isLoadingMore.value = true;
+    
+    // Simulate loading delay of 1.2 seconds to show the loading indicator
+    await Future.delayed(const Duration(milliseconds: 1200));
+    
+    currentPage.value++;
+    await fetchBooks();
+    isLoadingMore.value = false;
   }
 
   void nextPage() {
