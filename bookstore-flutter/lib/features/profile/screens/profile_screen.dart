@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../shared/theme/theme_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../shared/widgets/custom_button.dart';
@@ -19,6 +20,7 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Tài khoản'),
         actions: [
+          const _ThemeToggle(),
           Obx(() => controller.isLoggedIn.value
               ? IconButton(
                   icon: const Icon(Icons.logout),
@@ -267,6 +269,20 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    ));
+  }
+}
+
+class _ThemeToggle extends StatelessWidget {
+  const _ThemeToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeController = Get.put(ThemeController(), permanent: true);
+    return Obx(() => IconButton(
+      tooltip: 'Chế độ sáng/tối',
+      icon: Icon(themeController.isDark ? Icons.light_mode : Icons.dark_mode),
+      onPressed: themeController.toggle,
     ));
   }
 }

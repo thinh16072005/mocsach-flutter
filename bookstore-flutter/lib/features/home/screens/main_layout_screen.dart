@@ -18,6 +18,7 @@ class MainLayoutScreen extends StatelessWidget {
     final List<Widget> pages = [
       const HomeScreen(),
       const ProductsScreen(),
+      const Center(child: Text('Search Screen')), // TODO: Replace with SearchScreen
       const CartScreen(),
       const ProfileScreen(),
     ];
@@ -52,6 +53,11 @@ class MainLayoutScreen extends StatelessWidget {
                   icon: const Icon(Icons.menu_book_outlined),
                   selectedIcon: Icon(Icons.menu_book, color: theme.colorScheme.primary),
                   label: 'Sách',
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.search),
+                  selectedIcon: Icon(Icons.search, color: theme.colorScheme.primary),
+                  label: 'Tìm kiếm',
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.shopping_bag_outlined),
