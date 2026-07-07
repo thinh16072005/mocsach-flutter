@@ -17,6 +17,9 @@ class BookController extends GetxController {
   final totalPages = 1.obs;
   final searchName = ''.obs;
   final selectedGenreId = RxnInt();
+  final isGridView = true.obs;
+  final selectedSort = RxnString();
+  final isLoadingMore = false.obs;
 
   // Admin dùng list/paging riêng (size lớn hơn), không dùng chung customer search.
   final adminBooks = <BookModel>[].obs;
@@ -39,7 +42,9 @@ class BookController extends GetxController {
       currentPage.value = 0;
       books.clear();
     }
-    isLoading.value = true;
+    if (currentPage.value == 0) {
+      isLoading.value = true;
+    }
     errorMessage.value = '';
     try {
       final response = await _dio.get(ApiEndpoints.bookSearch, queryParameters: {
@@ -47,12 +52,33 @@ class BookController extends GetxController {
         if (selectedGenreId.value != null) 'genreId': selectedGenreId.value,
         'page': currentPage.value,
         'size': 10,
+        if (selectedSort.value != null) 'sort': selectedSort.value,
       });
       final body = response.data;
       if (body['success'] == true) {
         final pageData = body['data'];
         final content = pageData['content'] as List;
-        books.assignAll(content.map((e) => BookModel.fromJson(e)).toList());
+        var contentList = content.map((e) => BookModel.fromJson(e)).toList();
+        
+        // Client-side sorting fallback
+        if (selectedSort.value != null) {
+          final sortVal = selectedSort.value!;
+          if (sortVal == 'sellPrice,asc') {
+            contentList.sort((a, b) => a.sellPrice.compareTo(b.sellPrice));
+          } else if (sortVal == 'nameBook,asc') {
+            contentList.sort((a, b) => a.nameBook.compareTo(b.nameBook));
+          } else if (sortVal == 'nameBook,desc') {
+            contentList.sort((a, b) => b.nameBook.compareTo(a.nameBook));
+          } else if (sortVal == 'avgRating,desc') {
+            contentList.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+          }
+        }
+        
+        if (currentPage.value == 0) {
+          books.assignAll(contentList);
+        } else {
+          books.addAll(contentList);
+        }
         totalPages.value = pageData['totalPages'] ?? 1;
       }
     } on DioException catch (e) {
@@ -120,6 +146,25 @@ class BookController extends GetxController {
     searchName.value = name;
     selectedGenreId.value = genreId;
     fetchBooks(reset: true);
+  }
+
+  void changeSort(String? sort) {
+    selectedSort.value = sort;
+    fetchBooks(reset: true);
+  }
+
+  Future<void> loadMoreBooks() async {
+    if (isLoading.value || isLoadingMore.value || currentPage.value >= totalPages.value - 1) {
+      return;
+    }
+    isLoadingMore.value = true;
+    
+    // Simulate loading delay of 1.2 seconds to show the loading indicator
+    await Future.delayed(const Duration(milliseconds: 1200));
+    
+    currentPage.value++;
+    await fetchBooks();
+    isLoadingMore.value = false;
   }
 
   void nextPage() {
