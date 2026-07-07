@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,9 +9,20 @@ import '../../../shared/widgets/book_card.dart';
 import '../../../shared/widgets/section_title.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/parallax_header.dart';
+import '../controllers/main_layout_controller.dart';
+import '../../profile/controllers/profile_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  void _navigateToTab(int index, String routeName) {
+    try {
+      final mainLayoutController = Get.find<MainLayoutController>();
+      mainLayoutController.changeTab(index);
+    } catch (_) {
+      Get.toNamed(routeName);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,15 +35,14 @@ class HomeScreen extends StatelessWidget {
           // Hero parallax: ảnh bìa sách bán chạy làm nền (mờ + gradient) + tiêu đề serif.
           // Obx đặt TRONG background (box-context), không bọc cả sliver.
           ParallaxSliverHeader(
-            expandedHeight: 280,
-            collapsedTitle: 'BookStore',
-            actions: const [_ThemeToggle(), _CartAction(), _ProfileAction(), SizedBox(width: 4)],
+            expandedHeight: 320,
+            collapsedTitle: 'Mộc Sách',
             background: Obx(() {
               final hero =
                   controller.bestsellers.isNotEmpty ? controller.bestsellers.first : null;
               return _HeroBackground(coverUrl: hero?.thumbnailUrl);
             }),
-            foreground: _HeroContent(onExplore: () => Get.toNamed('/products')),
+            foreground: _HeroContent(onExplore: () => _navigateToTab(1, '/products')),
           ),
 
           // Sách bán chạy
@@ -39,7 +50,7 @@ class HomeScreen extends StatelessWidget {
             child: SectionTitle(
               title: 'Sách bán chạy',
               actionLabel: 'Xem tất cả',
-              onAction: () => Get.toNamed('/products'),
+              onAction: () => _navigateToTab(1, '/products'),
             ),
           ),
           SliverToBoxAdapter(
@@ -59,7 +70,7 @@ class HomeScreen extends StatelessWidget {
             child: SectionTitle(
               title: 'Mới phát hành',
               actionLabel: 'Xem tất cả',
-              onAction: () => Get.toNamed('/products'),
+              onAction: () => _navigateToTab(1, '/products'),
             ),
           ),
           SliverToBoxAdapter(
@@ -82,21 +93,28 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SectionTitle(title: 'Khám phá theo thể loại'),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: controller.genres.map((g) {
-                        return ActionChip(
-                          label: Text(g['nameGenre'] ?? ''),
-                          onPressed: () {
-                            controller.selectedGenreId.value = g['idGenre'] as int;
+                  SizedBox(
+                    height: 105,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: controller.genres.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (ctx, i) {
+                        final g = controller.genres[i];
+                        final name = g['nameGenre'] ?? '';
+                        final id = g['idGenre'] as int;
+                        return _GenreCard(
+                          name: name,
+                          id: id,
+                          index: i,
+                          onTap: () {
+                            controller.selectedGenreId.value = id;
                             controller.fetchBooks(reset: true);
-                            Get.toNamed('/products');
+                            _navigateToTab(1, '/products');
                           },
                         );
-                      }).toList(),
+                      },
                     ),
                   ),
                 ],
@@ -160,19 +178,46 @@ class _HeroContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final profileController = Get.put(ProfileController());
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Personalized Greeting
+        Obx(() {
+          String greeting = 'Chào bạn!';
+          if (profileController.isLoggedIn.value && profileController.user.value != null) {
+            final user = profileController.user.value!;
+            final name = (user.firstName != null && user.firstName!.isNotEmpty)
+                ? user.firstName!
+                : (user.fullName.isNotEmpty ? user.fullName : user.email);
+            greeting = 'Chào $name!';
+          }
+          return Text(
+            greeting,
+            style: textTheme.titleMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontWeight: FontWeight.w500,
+            ),
+          );
+        }),
+        const SizedBox(height: 4),
         Text(
           'Khám phá thế giới\nqua từng trang sách',
-          style: textTheme.displaySmall?.copyWith(color: Colors.white, height: 1.2),
+          style: textTheme.displaySmall?.copyWith(
+            color: Colors.white,
+            height: 1.25,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        const SizedBox(height: 12),
-        ElevatedButton.icon(
-          onPressed: onExplore,
-          icon: const Icon(Icons.auto_stories, size: 18),
-          label: const Text('Xem tất cả sách'),
+        const SizedBox(height: 16),
+        // Glassmorphic Search Bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          ),
         ),
       ],
     );
@@ -216,34 +261,106 @@ class _EmptyHint extends StatelessWidget {
   }
 }
 
-class _ThemeToggle extends StatelessWidget {
-  const _ThemeToggle();
+class _GenreCard extends StatelessWidget {
+  final String name;
+  final int id;
+  final int index;
+  final VoidCallback onTap;
+
+  const _GenreCard({
+    required this.name,
+    required this.id,
+    required this.index,
+    required this.onTap,
+  });
+
+  IconData _getGenreIcon(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('truyện') || n.contains('tiểu thuyết')) return Icons.menu_book;
+    if (n.contains('khoa học') || n.contains('công nghệ')) return Icons.science_outlined;
+    if (n.contains('kinh tế') || n.contains('tài chính') || n.contains('kinh doanh')) return Icons.trending_up;
+    if (n.contains('văn học')) return Icons.history_edu;
+    if (n.contains('lịch sử') || n.contains('địa lý')) return Icons.auto_stories;
+    if (n.contains('kỹ năng') || n.contains('phát triển') || n.contains('tự lực')) return Icons.psychology;
+    if (n.contains('ngoại ngữ') || n.contains('tiếng')) return Icons.translate;
+    if (n.contains('thiếu nhi') || n.contains('trẻ em')) return Icons.child_care;
+    if (n.contains('nghệ thuật') || n.contains('đời sống')) return Icons.palette_outlined;
+    return Icons.bookmark_outline;
+  }
+
+  List<Color> _getGenreGradient(int index) {
+    final gradients = [
+      [const Color(0xFF0F4C5C), const Color(0xFF1F8A96)], // Teal
+      [const Color(0xFF1B263B), const Color(0xFF415A77)], // Navy
+      [const Color(0xFF6A4C93), const Color(0xFF8E7DBE)], // Purple
+      [const Color(0xFF8B2635), const Color(0xFFC04B5C)], // Deep Red
+      [const Color(0xFFD66800), const Color(0xFFE0A458)], // Orange/Gold
+      [const Color(0xFF386641), const Color(0xFF6A994E)], // Forest Green
+      [const Color(0xFF2C3E50), const Color(0xFF34495E)], // Charcoal
+    ];
+    return gradients[index % gradients.length];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final themeController = Get.put(ThemeController(), permanent: true);
-    return Obx(() => IconButton(
-          tooltip: 'Chế độ sáng/tối',
-          icon: Icon(themeController.isDark ? Icons.light_mode : Icons.dark_mode),
-          onPressed: themeController.toggle,
-        ));
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Ink(
+        width: 140,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: _getGenreGradient(index),
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -10,
+              bottom: -10,
+              child: Icon(
+                _getGenreIcon(name),
+                size: 64,
+                color: Colors.white.withValues(alpha: 0.15),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(
+                    _getGenreIcon(name),
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-}
-
-class _CartAction extends StatelessWidget {
-  const _CartAction();
-  @override
-  Widget build(BuildContext context) => IconButton(
-        icon: const Icon(Icons.shopping_bag_outlined),
-        onPressed: () => Get.toNamed('/cart'),
-      );
-}
-
-class _ProfileAction extends StatelessWidget {
-  const _ProfileAction();
-  @override
-  Widget build(BuildContext context) => IconButton(
-        icon: const Icon(Icons.person_outline),
-        onPressed: () => Get.toNamed('/profile'),
-      );
 }

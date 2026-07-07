@@ -114,7 +114,7 @@ class AuthController extends GetxController {
 
   Future<void> logout() async {
     await TokenStorage.clearAll();
-    Get.offAllNamed('/login');
+    Get.offAllNamed('/home');
   }
 
   /// Điều hướng sau khi xác thực: ADMIN → /admin, còn lại → /home.

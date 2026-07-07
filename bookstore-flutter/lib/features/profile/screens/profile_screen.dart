@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../shared/theme/theme_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../shared/widgets/custom_button.dart';
@@ -19,13 +20,38 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Tài khoản'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => authController.logout(),
-          ),
+          const _ThemeToggle(),
+          Obx(() => controller.isLoggedIn.value
+              ? IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () => authController.logout(),
+                )
+              : const SizedBox.shrink()),
         ],
       ),
       body: Obx(() {
+        if (!controller.isLoggedIn.value) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.account_circle, size: 80, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text('Bạn chưa đăng nhập', style: TextStyle(fontSize: 18)),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => Get.toNamed('/login'),
+                  icon: const Icon(Icons.login),
+                  label: const Text('Đăng nhập ngay'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -243,6 +269,20 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    ));
+  }
+}
+
+class _ThemeToggle extends StatelessWidget {
+  const _ThemeToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeController = Get.put(ThemeController(), permanent: true);
+    return Obx(() => IconButton(
+      tooltip: 'Chế độ sáng/tối',
+      icon: Icon(themeController.isDark ? Icons.light_mode : Icons.dark_mode),
+      onPressed: themeController.toggle,
     ));
   }
 }
