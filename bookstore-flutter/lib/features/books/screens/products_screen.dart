@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../controllers/book_controller.dart';
+import '../../home/controllers/main_layout_controller.dart';
 import '../../../core/models/book_model.dart';
 import '../../../shared/widgets/book_card.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
@@ -16,11 +17,22 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   final controller = Get.put(BookController());
   final ScrollController _scrollController = ScrollController();
+  bool _showGoToTop = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    
+    // Listen to double tap on navbar Books tab to scroll to top
+    try {
+      final mainLayoutCtrl = Get.find<MainLayoutController>();
+      ever(mainLayoutCtrl.doubleTapTab, (index) {
+        if (index == 1) { // 1 is Books tab
+          _scrollToTop();
+        }
+      });
+    } catch (_) {}
   }
 
   @override
@@ -32,6 +44,22 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
       controller.loadMoreBooks();
+    }
+    final show = _scrollController.offset > 400;
+    if (show != _showGoToTop) {
+      setState(() {
+        _showGoToTop = show;
+      });
+    }
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -56,6 +84,21 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: AnimatedSlide(
+        duration: const Duration(milliseconds: 300),
+        offset: _showGoToTop ? Offset.zero : const Offset(0, 2),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: _showGoToTop ? 1.0 : 0.0,
+          child: FloatingActionButton(
+            mini: true,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            onPressed: _scrollToTop,
+            child: const Icon(Icons.arrow_upward_rounded),
+          ),
+        ),
+      ),
       appBar: AppBar(
         title: const Text('Khám phá sách'),
         actions: [
@@ -75,7 +118,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
       ),
       body: Column(
         children: [
-          _GenreFilter(controller: controller),
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value && controller.books.isEmpty) {
@@ -100,20 +142,23 @@ class _ProductsScreenState extends State<ProductsScreen> {
               return Column(
                 children: [
                   Expanded(
-                    child: controller.isGridView.value
-                        ? GridView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.all(16),
-                            gridDelegate: _gridDelegate,
-                            itemCount: controller.books.length,
-                            itemBuilder: (ctx, i) => BookCard(book: controller.books[i]),
-                          )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            itemCount: controller.books.length,
-                            itemBuilder: (ctx, i) => _DetailedBookCard(book: controller.books[i]),
-                          ),
+                    child: RefreshIndicator(
+                      onRefresh: () => controller.fetchBooks(reset: true),
+                      child: controller.isGridView.value
+                          ? GridView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate: _gridDelegate,
+                              itemCount: controller.books.length,
+                              itemBuilder: (ctx, i) => BookCard(book: controller.books[i]),
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              itemCount: controller.books.length,
+                              itemBuilder: (ctx, i) => _DetailedBookCard(book: controller.books[i]),
+                            ),
+                    ),
                   ),
                   if (controller.isLoadingMore.value)
                     const Padding(
@@ -239,58 +284,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
         controller.changeSort(value);
         Get.back();
       },
-    );
-  }
-}
-
-class _GenreFilter extends StatelessWidget {
-  final BookController controller;
-  const _GenreFilter({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      if (controller.genres.isEmpty) return const SizedBox.shrink();
-      return SizedBox(
-        height: 52,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          children: [
-            _chip(
-              label: 'Tất cả',
-              selected: controller.selectedGenreId.value == null,
-              onTap: () {
-                controller.selectedGenreId.value = null;
-                controller.fetchBooks(reset: true);
-              },
-            ),
-            ...controller.genres.map((g) {
-              final id = g['idGenre'] as int;
-              return _chip(
-                label: g['nameGenre'] ?? '',
-                selected: controller.selectedGenreId.value == id,
-                onTap: () {
-                  controller.selectedGenreId.value =
-                      controller.selectedGenreId.value == id ? null : id;
-                  controller.fetchBooks(reset: true);
-                },
-              );
-            }),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _chip({required String label, required bool selected, required VoidCallback onTap}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: FilterChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-      ),
     );
   }
 }
