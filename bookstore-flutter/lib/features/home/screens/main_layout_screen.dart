@@ -1,3 +1,4 @@
+import 'package:bookstore_flutter/features/books/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/main_layout_controller.dart';
@@ -18,7 +19,7 @@ class MainLayoutScreen extends StatelessWidget {
     final List<Widget> pages = [
       const HomeScreen(),
       const ProductsScreen(),
-      const Center(child: Text('Search Screen')), // TODO: Replace with SearchScreen
+      const SearchScreen(),
       const CartScreen(),
       const ProfileScreen(),
     ];

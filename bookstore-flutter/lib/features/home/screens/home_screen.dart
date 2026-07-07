@@ -212,10 +212,41 @@ class _HeroContent extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         // Glassmorphic Search Bar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        GestureDetector(
+          onTap: () {
+            try {
+              final mainLayoutController = Get.find<MainLayoutController>();
+              mainLayoutController.changeTab(2); // 2 is the Search tab
+            } catch (_) {}
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search_rounded, color: Colors.white70),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Tìm kiếm sách, tác giả...',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ],
