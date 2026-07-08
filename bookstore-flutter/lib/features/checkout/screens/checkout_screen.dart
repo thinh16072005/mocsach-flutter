@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/api_endpoints.dart';
 import '../../../core/models/order_model.dart';
@@ -186,6 +187,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     labelText: 'Ghi chú (tuỳ chọn)', border: OutlineInputBorder()),
               ),
               const Divider(height: 32),
+              Obx(() => _buildProductList()),
+              const Divider(height: 32),
               const Text('Hình thức giao hàng',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 8),
@@ -341,15 +344,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   );
                 }),
-              const Divider(height: 32),
-              _buildTotalSection(),
-              const SizedBox(height: 16),
-              Obx(() => CustomButton(
-                    text: 'Đặt hàng',
-                    isLoading: _orderController.isLoading.value,
-                    onPressed: _onPlaceOrder,
-                  )),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Obx(() => _buildTotalSection()),
+                const SizedBox(height: 12),
+                Obx(() => CustomButton(
+                      text: 'Đặt hàng',
+                      isLoading: _orderController.isLoading.value,
+                      onPressed: _onPlaceOrder,
+                    )),
+              ],
+            ),
           ),
         ),
       ),
@@ -526,6 +556,105 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       decoration: InputDecoration(
           labelText: label, border: const OutlineInputBorder(), prefixIcon: Icon(icon)),
       validator: (v) => v!.trim().isEmpty ? 'Không được để trống' : null,
+    );
+  }
+
+  Widget _buildProductList() {
+    final items = _cartController.lines
+        .where((line) =>
+            _cartController.selectedItemIds.isEmpty ||
+            _cartController.selectedItemIds.contains(line.item.idCartItem))
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Danh sách sản phẩm',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        ...items.map((line) {
+          final book = line.book;
+          return Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                width: 1,
+              ),
+            ),
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 56,
+                    height: 72,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: book?.thumbnailUrl != null
+                          ? CachedNetworkImage(
+                              imageUrl: book!.thumbnailUrl!,
+                              fit: BoxFit.cover,
+                              placeholder: (c, u) => const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              errorWidget: (c, u, e) =>
+                                  const Icon(Icons.book, size: 40),
+                            )
+                          : const Icon(Icons.book, size: 40, color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          book?.nameBook ?? 'Sách #${line.item.bookId}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        if (book?.author != null && book!.author.isNotEmpty) ...[
+                          Text(
+                            'Tác giả: ${book!.author}',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Số lượng: ${line.item.quantity}',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            Text(
+                              '${line.lineTotal.toStringAsFixed(0)}đ',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
     );
   }
 
