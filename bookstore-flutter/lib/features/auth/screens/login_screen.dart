@@ -23,6 +23,13 @@ class _LoginScreenState extends State<LoginScreen> {
     final scheme = theme.colorScheme;
 
     return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

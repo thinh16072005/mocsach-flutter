@@ -104,12 +104,22 @@ class CartController extends GetxController {
   }
 
   Future<void> addItem(int bookId, {int quantity = 1}) async {
+    final userId = await TokenStorage.getUserId();
+    if (userId == null) {
+      Get.toNamed('/login');
+      Get.snackbar('Thông báo', 'Bạn cần phải đăng nhập để tiếp tục');
+      return;
+    }
     try {
       await _dio.post(ApiEndpoints.cartItems, data: {'bookId': bookId, 'quantity': quantity});
       Get.snackbar('Thành công', 'Đã thêm vào giỏ hàng!');
       fetchCart();
     } on DioException catch (e) {
-      Get.snackbar('Lỗi', e.response?.data?['message'] ?? 'Không thể thêm vào giỏ hàng');
+      if (e.response?.statusCode == 401) {
+        Get.snackbar('Lỗi', 'Bạn cần phải đăng nhập để tiếp tục');
+      } else {
+        Get.snackbar('Lỗi', e.response?.data?['message'] ?? 'Không thể thêm vào giỏ hàng');
+      }
     }
   }
 
