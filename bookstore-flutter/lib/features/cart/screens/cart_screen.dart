@@ -176,36 +176,46 @@ class CartScreen extends StatelessWidget {
                                 },
                               ),
                             ),
-                            SizedBox(
-                              width: 56,
-                              height: 72,
-                              child: book?.thumbnailUrl != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: book!.thumbnailUrl!,
-                                      fit: BoxFit.cover,
-                                      placeholder: (c, u) =>
-                                          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                                      errorWidget: (c, u, e) => const Icon(Icons.book, size: 40),
-                                    )
-                                  : const Icon(Icons.book, size: 40, color: Colors.grey),
-                            ),
-                            const SizedBox(width: 10),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(book?.nameBook ?? 'Sách #${item.bookId}',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('${(book?.sellPrice ?? 0).toStringAsFixed(0)}đ',
-                                      style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                                  const SizedBox(height: 4),
-                                  Text('Thành tiền: ${line.lineTotal.toStringAsFixed(0)}đ',
-                                      style: const TextStyle(
-                                          color: Colors.red, fontWeight: FontWeight.bold)),
-                                ],
+                              child: InkWell(
+                                onTap: () => Get.toNamed('/book-detail', arguments: item.bookId),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 56,
+                                      height: 72,
+                                      child: book?.thumbnailUrl != null
+                                          ? CachedNetworkImage(
+                                              imageUrl: book!.thumbnailUrl!,
+                                              fit: BoxFit.cover,
+                                              placeholder: (c, u) =>
+                                                  const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                              errorWidget: (c, u, e) => const Icon(Icons.book, size: 40),
+                                            )
+                                          : const Icon(Icons.book, size: 40, color: Colors.grey),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(book?.nameBook ?? 'Sách #${item.bookId}',
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          const SizedBox(height: 4),
+                                          Text('${(book?.sellPrice ?? 0).toStringAsFixed(0)}đ',
+                                              style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                          const SizedBox(height: 4),
+                                          Text('Thành tiền: ${line.lineTotal.toStringAsFixed(0)}đ',
+                                              style: const TextStyle(
+                                                  color: Colors.red, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                             Column(
