@@ -41,7 +41,7 @@ class BookStoreApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // ThemeController áp dụng theme qua Get.changeThemeMode (KHÔNG bọc app trong Obx
-    // để tránh rebuild toàn bộ Navigator khi đổi theme).
+    // để tránh rebuild toàn bộ Navigator khi đổi theme)
     Get.put(ThemeController(), permanent: true);
     return GetMaterialApp(
       title: 'BookStore',

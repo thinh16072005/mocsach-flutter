@@ -19,14 +19,8 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tài khoản'),
-        actions: [
-          const _ThemeToggle(),
-          Obx(() => controller.isLoggedIn.value
-              ? IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () => authController.logout(),
-                )
-              : const SizedBox.shrink()),
+        actions: const [
+          _ThemeToggle(),
         ],
       ),
       body: Obx(() {
@@ -120,27 +114,77 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.edit,
                 onPressed: () => _showEditDialog(context, controller, user),
               ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => Get.toNamed('/change-password'),
-                icon: const Icon(Icons.lock),
-                label: const Text('Đổi mật khẩu'),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () => Get.toNamed('/change-password'),
+                  icon: const Icon(Icons.lock),
+                  label: const Text('Đổi mật khẩu'),
+                ),
               ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => Get.toNamed('/orders'),
-                icon: const Icon(Icons.receipt_long),
-                label: const Text('Đơn hàng của tôi'),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () => Get.toNamed('/orders'),
+                  icon: const Icon(Icons.receipt_long),
+                  label: const Text('Đơn hàng của tôi'),
+                ),
               ),
-              OutlinedButton.icon(
-                onPressed: () => Get.toNamed('/favorites'),
-                icon: const Icon(Icons.favorite),
-                label: const Text('Sách yêu thích'),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () => Get.toNamed('/favorites'),
+                  icon: const Icon(Icons.favorite),
+                  label: const Text('Sách yêu thích'),
+                ),
               ),
-              OutlinedButton.icon(
-                onPressed: () => Get.toNamed('/feedback'),
-                icon: const Icon(Icons.feedback),
-                label: const Text('Gửi phản hồi'),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () => Get.toNamed('/feedback'),
+                  icon: const Icon(Icons.feedback),
+                  label: const Text('Gửi phản hồi'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    foregroundColor: Colors.red,
+                  ),
+                  onPressed: () => Get.dialog(
+                    AlertDialog(
+                      title: const Text('Xác nhận đăng xuất'),
+                      content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: const Text('Hủy'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                            authController.logout();
+                          },
+                          child: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Đăng xuất'),
+                ),
               ),
             ],
           ),
