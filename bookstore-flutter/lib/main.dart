@@ -17,6 +17,7 @@ import 'features/checkout/screens/payos_payment_screen.dart';
 import 'features/orders/screens/orders_screen.dart';
 import 'features/orders/screens/order_detail_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'features/profile/screens/edit_profile_screen.dart';
 import 'features/favorites/screens/favorites_screen.dart';
 import 'features/feedback/screens/feedback_screen.dart';
 import 'features/admin/screens/admin_dashboard_screen.dart';
@@ -71,6 +72,7 @@ class BookStoreApp extends StatelessWidget {
         GetPage(name: '/orders', page: () => const OrdersScreen()),
         GetPage(name: '/order-detail', page: () => const OrderDetailScreen()),
         GetPage(name: '/profile', page: () => const ProfileScreen()),
+        GetPage(name: '/edit-profile', page: () => const EditProfileScreen()),
         GetPage(name: '/favorites', page: () => const FavoritesScreen()),
         GetPage(name: '/feedback', page: () => const FeedbackScreen()),
         // Admin (mọi route bọc AdminGuard — chặn khách truy cập)
