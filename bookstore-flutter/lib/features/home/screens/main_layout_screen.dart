@@ -6,6 +6,7 @@ import 'home_screen.dart';
 import '../../books/screens/products_screen.dart';
 import '../../cart/screens/cart_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../cart/controllers/cart_controller.dart';
 
 class MainLayoutScreen extends StatelessWidget {
   const MainLayoutScreen({super.key});
@@ -14,6 +15,7 @@ class MainLayoutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Put MainLayoutController as permanent to keep active tab state
     final controller = Get.put(MainLayoutController(), permanent: true);
+    final cartController = Get.put(CartController());
     final theme = Theme.of(context);
 
     final List<Widget> pages = [
@@ -61,8 +63,22 @@ class MainLayoutScreen extends StatelessWidget {
                   label: 'Tìm kiếm',
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.shopping_bag_outlined),
-                  selectedIcon: Icon(Icons.shopping_bag, color: theme.colorScheme.primary),
+                  icon: Obx(() {
+                    final count = cartController.totalItemCount;
+                    return Badge(
+                      label: Text(count.toString()),
+                      isLabelVisible: count > 0,
+                      child: const Icon(Icons.shopping_bag_outlined),
+                    );
+                  }),
+                  selectedIcon: Obx(() {
+                    final count = cartController.totalItemCount;
+                    return Badge(
+                      label: Text(count.toString()),
+                      isLabelVisible: count > 0,
+                      child: Icon(Icons.shopping_bag, color: theme.colorScheme.primary),
+                    );
+                  }),
                   label: 'Giỏ hàng',
                 ),
                 NavigationDestination(

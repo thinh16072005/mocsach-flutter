@@ -388,7 +388,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   // Tạm tính lấy từ giỏ đã làm giàu (giá × SL). Server tính lại tổng cuối (R3).
-  double _calcSubtotal() => _cartController.totalPrice;
+  double _calcSubtotal() {
+    if (_cartController.selectedItemIds.isNotEmpty) {
+      return _cartController.selectedTotalPrice;
+    }
+    return _cartController.totalPrice;
+  }
 
   bool _isPayOsSelected() {
     for (final p in _paymentMethods) {
@@ -443,8 +448,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final total =
         subtotal - (subtotal * _discountPercent / 100) + _selectedDeliveryFee;
 
-    final orderItems = _cartController.cartItems
-        .map((item) => {'bookId': item.bookId, 'quantity': item.quantity})
+    final orderItems = _cartController.lines
+        .where((line) => _cartController.selectedItemIds.isEmpty || _cartController.selectedItemIds.contains(line.item.idCartItem))
+        .map((line) => {'bookId': line.item.bookId, 'quantity': line.item.quantity})
         .toList();
 
     final order = await _orderController.createOrder(
