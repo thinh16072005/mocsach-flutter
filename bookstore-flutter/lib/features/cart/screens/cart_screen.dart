@@ -96,7 +96,7 @@ class CartScreen extends StatelessWidget {
                         );
                       },
                       icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                      label: Text('Xóa đã chọn ($selectedCount)', style: const TextStyle(color: Colors.red)),
+                      label: Text('Xóa ($selectedCount)', style: const TextStyle(color: Colors.red)),
                     ),
                   ],
                 ],
@@ -112,83 +112,128 @@ class CartScreen extends StatelessWidget {
                   final book = line.book;
                   final isSelected = controller.isSelected(item.idCartItem);
 
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  return Dismissible(
+                    key: Key(item.idCartItem.toString()),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade700,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Center(
-                            child: Checkbox(
-                              value: isSelected,
-                              onChanged: (val) {
-                                controller.toggleSelection(item.idCartItem);
-                              },
+                          Icon(Icons.delete, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Xóa',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ),
-                          SizedBox(
-                            width: 56,
-                            height: 72,
-                            child: book?.thumbnailUrl != null
-                                ? CachedNetworkImage(
-                                    imageUrl: book!.thumbnailUrl!,
-                                    fit: BoxFit.cover,
-                                    placeholder: (c, u) =>
-                                        const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                                    errorWidget: (c, u, e) => const Icon(Icons.book, size: 40),
-                                  )
-                                : const Icon(Icons.book, size: 40, color: Colors.grey),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(book?.nameBook ?? 'Sách #${item.bookId}',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                Text('${(book?.sellPrice ?? 0).toStringAsFixed(0)}đ',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                                const SizedBox(height: 4),
-                                Text('Thành tiền: ${line.lineTotal.toStringAsFixed(0)}đ',
-                                    style: const TextStyle(
-                                        color: Colors.red, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    icon: const Icon(Icons.remove_circle_outline),
-                                    onPressed: item.quantity > 1
-                                        ? () => controller.updateQuantity(
-                                            item.idCartItem, item.quantity - 1)
-                                        : null,
-                                  ),
-                                  Text('${item.quantity}'),
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    icon: const Icon(Icons.add_circle_outline),
-                                    onPressed: () => controller.updateQuantity(
-                                        item.idCartItem, item.quantity + 1),
-                                  ),
-                                ],
-                              ),
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () => controller.removeItem(item.idCartItem),
-                              ),
-                            ],
                           ),
                         ],
+                      ),
+                    ),
+                    confirmDismiss: (direction) async {
+                      final confirm = await Get.dialog<bool>(
+                        AlertDialog(
+                          title: const Text('Xác nhận xóa'),
+                          content: Text('Bạn có chắc chắn muốn xóa "${book?.nameBook ?? 'Sách'}" khỏi giỏ hàng?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back(result: false),
+                              child: const Text('Hủy'),
+                            ),
+                            TextButton(
+                              onPressed: () => Get.back(result: true),
+                              child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
+                      return confirm;
+                    },
+                    onDismissed: (direction) {
+                      controller.removeItem(item.idCartItem);
+                    },
+                    child: Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Checkbox(
+                                value: isSelected,
+                                onChanged: (val) {
+                                  controller.toggleSelection(item.idCartItem);
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: 56,
+                              height: 72,
+                              child: book?.thumbnailUrl != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: book!.thumbnailUrl!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (c, u) =>
+                                          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                      errorWidget: (c, u, e) => const Icon(Icons.book, size: 40),
+                                    )
+                                  : const Icon(Icons.book, size: 40, color: Colors.grey),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(book?.nameBook ?? 'Sách #${item.bookId}',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                  Text('${(book?.sellPrice ?? 0).toStringAsFixed(0)}đ',
+                                      style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                  const SizedBox(height: 4),
+                                  Text('Thành tiền: ${line.lineTotal.toStringAsFixed(0)}đ',
+                                      style: const TextStyle(
+                                          color: Colors.red, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      icon: const Icon(Icons.remove_circle_outline),
+                                      onPressed: item.quantity > 1
+                                          ? () => controller.updateQuantity(
+                                              item.idCartItem, item.quantity - 1)
+                                          : null,
+                                    ),
+                                    Text('${item.quantity}'),
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      icon: const Icon(Icons.add_circle_outline),
+                                      onPressed: () => controller.updateQuantity(
+                                          item.idCartItem, item.quantity + 1),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -201,7 +246,7 @@ class CartScreen extends StatelessWidget {
       bottomNavigationBar: Obx(() {
         if (controller.cartItems.isEmpty) return const SizedBox.shrink();
         final selectedCount = controller.selectedItemIds.length;
-        final displayPrice = selectedCount > 0 ? controller.selectedTotalPrice : controller.totalPrice;
+        final displayPrice = controller.selectedTotalPrice;
 
         return SafeArea(
           child: Padding(
@@ -210,6 +255,7 @@ class CartScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: Column(
+
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
