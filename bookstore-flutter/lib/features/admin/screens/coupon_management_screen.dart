@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/admin_controller.dart';
@@ -14,27 +15,42 @@ class CouponManagementScreen extends StatefulWidget {
 class _CouponManagementScreenState extends State<CouponManagementScreen> {
   final controller = Get.put(AdminController());
   final _searchCtrl = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _keyword = '';
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     controller.fetchCoupons(page: 0);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchCtrl.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
+      controller.loadMoreCoupons();
+    }
   }
 
   void _onSearchChanged(String value) {
     setState(() => _keyword = value);
-    if (value.trim().isEmpty) {
-      controller.fetchCoupons(page: 0, size: 10);
-    } else {
-      controller.fetchCoupons(page: 0, size: 200);
-    }
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (value.trim().isEmpty) {
+        controller.fetchCoupons(page: 0, size: 10);
+      } else {
+        controller.fetchCoupons(page: 0, size: 200);
+      }
+    });
   }
 
   List<dynamic> _filteredCoupons() {
@@ -64,6 +80,8 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
             onChanged: _onSearchChanged,
           ),
           Obx(() {
+            // Reference rx variable to avoid GetX improper use error when searching is false
+            final _ = controller.coupons.length;
             if (searching) {
               return AdminFilterResultBar(count: _filteredCoupons().length);
             }
@@ -71,10 +89,10 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
           }),
           Expanded(
             child: Obx(() {
-              if (controller.isLoading.value) {
+              final items = _filteredCoupons();
+              if (controller.isLoading.value && items.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final items = _filteredCoupons();
               if (items.isEmpty) {
                 return Center(
                   child: Text(
@@ -84,36 +102,56 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
                   ),
                 );
               }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: items.length,
-                itemBuilder: (ctx, i) {
-                  final c = CouponModel.fromJson(Map<String, dynamic>.from(items[i]));
-                  return Card(
-                    child: ListTile(
-                      title: Text(c.code, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('Giảm ${c.discountPercent}% • HSD: ${c.expiryDate}'
-                          '${c.isUsed ? ' • Đã dùng' : ''}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Switch(
-                            value: c.isActive,
-                            onChanged: (_) => controller.toggleCoupon(c.idCoupon),
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      itemCount: items.length,
+                      itemBuilder: (ctx, i) {
+                        final c = CouponModel.fromJson(Map<String, dynamic>.from(items[i]));
+                        return Card(
+                          child: ListTile(
+                            title: Text(c.code, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('Giảm ${c.discountPercent}% • HSD: ${c.expiryDate}'
+                                '${c.isUsed ? ' • Đã dùng' : ''}'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Switch(
+                                  value: c.isActive,
+                                  onChanged: (_) => controller.toggleCoupon(c.idCoupon),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _confirmDelete(c.idCoupon, c.code),
+                                ),
+                              ],
+                            ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => controller.deleteCoupon(c.idCoupon),
-                          ),
-                        ],
+                        );
+                      },
+                    ),
+                  ),
+                  if (controller.isLoadingMoreCoupons.value)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (controller.couponPage.value < controller.couponTotalPages.value - 1 && !searching)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: TextButton.icon(
+                        onPressed: () => controller.loadMoreCoupons(),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Tải thêm mã'),
                       ),
                     ),
-                  );
-                },
+                ],
               );
             }),
           ),
-          if (!searching) _Pagination(controller: controller),
         ],
       ),
     );
@@ -154,37 +192,32 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
               int.tryParse(discountCtrl.text) ?? 10,
               expiryCtrl.text.trim(),
             );
-            Get.back();
-            if (success) Get.snackbar('Thành công', 'Đã tạo mã giảm giá');
+            if (success) {
+              Get.back();
+              Get.snackbar('Thành công', 'Đã tạo mã giảm giá');
+            }
           },
           child: const Text('Tạo'),
         ),
       ],
     ));
   }
-}
 
-class _Pagination extends StatelessWidget {
-  final AdminController controller;
-  const _Pagination({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() => Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: controller.couponPage.value > 0 ? controller.couponPrevPage : null,
-            ),
-            Text('Trang ${controller.couponPage.value + 1} / ${controller.couponTotalPages.value}'),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: controller.couponPage.value < controller.couponTotalPages.value - 1
-                  ? controller.couponNextPage
-                  : null,
-            ),
-          ],
-        ));
+  void _confirmDelete(int id, String code) {
+    Get.dialog(AlertDialog(
+      title: const Text('Xác nhận xóa'),
+      content: Text('Bạn có chắc muốn xóa mã giảm giá "$code"?'),
+      actions: [
+        TextButton(onPressed: () => Get.back(), child: const Text('Huỷ')),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () {
+            controller.deleteCoupon(id);
+            Get.back();
+          },
+          child: const Text('Xóa'),
+        ),
+      ],
+    ));
   }
 }

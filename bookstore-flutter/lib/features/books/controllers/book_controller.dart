@@ -28,6 +28,7 @@ class BookController extends GetxController {
   final adminPage = 0.obs;
   final adminTotalPages = 1.obs;
   final adminLoading = false.obs;
+  final isLoadingMoreAdminBooks = false.obs;
 
   @override
   void onInit() {
@@ -186,9 +187,11 @@ class BookController extends GetxController {
   }
 
   // ---- Admin ----
-  Future<void> fetchBooksForAdmin({bool reset = false, int size = 20}) async {
+  Future<void> fetchBooksForAdmin({bool reset = false, int size = 10, bool append = false}) async {
     if (reset) adminPage.value = 0;
-    adminLoading.value = true;
+    if (adminPage.value == 0 && !append) {
+      adminLoading.value = true;
+    }
     try {
       final response = await _dio.get(ApiEndpoints.books, queryParameters: {
         'page': adminPage.value,
@@ -200,7 +203,12 @@ class BookController extends GetxController {
         final pageData = body['data'];
         final content = pageData['content'] as List;
         final listModel = content.map((e) => BookModel.fromJson(e)).toList();
-        adminBooks.assignAll(listModel.where((b) => !b.isDeleted).toList());
+        final listFiltered = listModel.where((b) => !b.isDeleted).toList();
+        if (adminPage.value == 0) {
+          adminBooks.assignAll(listFiltered);
+        } else {
+          adminBooks.addAll(listFiltered);
+        }
         adminTotalPages.value = pageData['totalPages'] ?? 1;
       }
     } on DioException catch (e) {
@@ -210,18 +218,15 @@ class BookController extends GetxController {
     }
   }
 
-  void adminNextPage() {
-    if (adminPage.value < adminTotalPages.value - 1) {
-      adminPage.value++;
-      fetchBooksForAdmin();
+  Future<void> loadMoreAdminBooks() async {
+    if (adminLoading.value || isLoadingMoreAdminBooks.value || adminPage.value >= adminTotalPages.value - 1) {
+      return;
     }
-  }
-
-  void adminPrevPage() {
-    if (adminPage.value > 0) {
-      adminPage.value--;
-      fetchBooksForAdmin();
-    }
+    isLoadingMoreAdminBooks.value = true;
+    await Future.delayed(const Duration(milliseconds: 1200));
+    adminPage.value++;
+    await fetchBooksForAdmin(append: true);
+    isLoadingMoreAdminBooks.value = false;
   }
 
   /// Nạp nhiều sách một lần để tìm kiếm theo tên/tác giả trên client.

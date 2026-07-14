@@ -24,6 +24,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
   final bookController = Get.put(BookController());
   final adminController = Get.put(AdminController());
   final _searchCtrl = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _keyword = '';
 
   @override
@@ -32,12 +33,21 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     adminController.fetchGenres();
     bookController.fetchBooksForAdmin(reset: true);
     bookController.fetchAllBooksForAdminSearch();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
+      bookController.loadMoreAdminBooks();
+    }
   }
 
   List<BookModel> _displayBooks() {
@@ -85,68 +95,68 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                   ),
                 );
               }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: books.length,
-                itemBuilder: (ctx, i) {
-                  final book = books[i];
-                  return Card(
-                    child: ListTile(
-                      leading: SizedBox(
-                        width: 40,
-                        height: 56,
-                        child: book.thumbnailUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: book.thumbnailUrl!,
-                                fit: BoxFit.cover,
-                                errorWidget: (c, u, e) => const Icon(Icons.book),
-                              )
-                            : const Icon(Icons.book, size: 40),
-                      ),
-                      title: Text(book.nameBook),
-                      subtitle:
-                          Text('${book.sellPrice.toStringAsFixed(0)}đ • SL: ${book.quantity}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => Get.to(() =>
-                                BookFormScreen(bookController: bookController, book: book)),
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      itemCount: books.length,
+                      itemBuilder: (ctx, i) {
+                        final book = books[i];
+                        return Card(
+                          child: ListTile(
+                            leading: SizedBox(
+                              width: 40,
+                              height: 56,
+                              child: book.thumbnailUrl != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: book.thumbnailUrl!,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (c, u, e) => const Icon(Icons.book),
+                                    )
+                                  : const Icon(Icons.book, size: 40),
+                            ),
+                            title: Text(book.nameBook),
+                            subtitle:
+                                Text('${book.sellPrice.toStringAsFixed(0)}đ • SL: ${book.quantity}'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => Get.to(() =>
+                                      BookFormScreen(bookController: bookController, book: book)),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _confirmDelete(book.idBook),
+                                ),
+                              ],
+                            ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _confirmDelete(book.idBook),
-                          ),
-                        ],
+                        );
+                      },
+                    ),
+                  ),
+                  if (bookController.isLoadingMoreAdminBooks.value)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (bookController.adminPage.value < bookController.adminTotalPages.value - 1 && !searching)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: TextButton.icon(
+                        onPressed: () => bookController.loadMoreAdminBooks(),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Tải thêm sách'),
                       ),
                     ),
-                  );
-                },
+                ],
               );
             }),
           ),
-          if (!searching)
-            Obx(() => Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed: bookController.adminPage.value > 0
-                          ? bookController.adminPrevPage
-                          : null,
-                    ),
-                    Text(
-                        'Trang ${bookController.adminPage.value + 1} / ${bookController.adminTotalPages.value}'),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: bookController.adminPage.value <
-                              bookController.adminTotalPages.value - 1
-                          ? bookController.adminNextPage
-                          : null,
-                    ),
-                  ],
-                )),
         ],
       ),
     );
