@@ -60,11 +60,19 @@ class CartController extends GetxController {
         final data = response.data['data'] as List;
         cartItems.assignAll(data.map((e) => CartItemModel.fromJson(e)).toList());
         
-        // Clean up selections that are no longer in cartItems
+        await _loadBooks();
+
+        final filteredItems = cartItems.where((item) {
+          final book = _books[item.bookId];
+          return book == null || !book.isDeleted;
+        }).toList();
+        
+        if (filteredItems.length != cartItems.length) {
+          cartItems.assignAll(filteredItems);
+        }
+
         final validIds = cartItems.map((e) => e.idCartItem).toSet();
         selectedItemIds.retainAll(validIds);
-        
-        await _loadBooks();
       }
     } on DioException {
       Get.snackbar('Lỗi', 'Không thể tải giỏ hàng');
