@@ -1,0 +1,67 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://localhost:4200"
+            allowedMethods: ["GET","POST","PUT","DELETE","PATCH","OPTIONS"]
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: auth-service
+          uri: ${SERVICES_AUTH_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - StripPrefix=2
+        - id: user-service
+          uri: ${SERVICES_USER_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - StripPrefix=2
+        - id: book-service
+          uri: ${SERVICES_BOOK_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/books/**,/api/v1/genres/**,/api/v1/reviews/**,/api/v1/favorites/**
+          filters:
+            - StripPrefix=2
+        - id: order-service
+          uri: ${SERVICES_ORDER_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/orders/**,/api/v1/cart/**,/api/v1/deliveries/**
+          filters:
+            - StripPrefix=2
+        - id: payment-service
+          uri: ${SERVICES_PAYMENT_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/payments/**
+          filters:
+            - StripPrefix=2
+        - id: coupon-feedback-service
+          uri: ${SERVICES_COUPON_FEEDBACK_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/coupons/**,/api/v1/feedbacks/**
+          filters:
+            - StripPrefix=2
+
+jwt:
+  secret: ${JWT_SECRET:MTIzNDU2NDU5OThEMzIxM0F6eGMzNTE2NTQzMjEzMjE2NTQ5OHEzMTNhMnMxZDMyMnp4M2MyMQ==}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.mocsach.gateway: DEBUG

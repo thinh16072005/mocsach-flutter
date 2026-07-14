@@ -1,0 +1,26 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: coupon-feedback-service
+  datasource:
+    url: ${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=db_other;encrypt=false;trustServerCertificate=true}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:123}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.SQLServerDialect
+    show-sql: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.bookstore.couponfeedback: DEBUG
