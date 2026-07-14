@@ -29,6 +29,14 @@ class FavoriteController extends GetxController {
       if (response.data['success'] == true) {
         favorites.assignAll(response.data['data'] as List);
         await _loadBooks();
+        final filteredFavs = favorites.where((fav) {
+          final bookId = fav['bookId'] as int;
+          final b = _books[bookId];
+          return b == null || !b.isDeleted;
+        }).toList();
+        if (filteredFavs.length != favorites.length) {
+          favorites.assignAll(filteredFavs);
+        }
       }
     } on DioException {
       Get.snackbar('Lỗi', 'Không thể tải danh sách yêu thích');

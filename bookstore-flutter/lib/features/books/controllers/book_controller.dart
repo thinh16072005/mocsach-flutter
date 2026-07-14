@@ -74,6 +74,8 @@ class BookController extends GetxController {
           }
         }
         
+        contentList = contentList.where((b) => !b.isDeleted).toList();
+
         if (currentPage.value == 0) {
           books.assignAll(contentList);
         } else {
@@ -98,7 +100,8 @@ class BookController extends GetxController {
       final body = response.data;
       if (body['success'] == true && body['data'] is List) {
         final list = body['data'] as List;
-        bestsellers.assignAll(list.map((e) => BookModel.fromJson(e)).toList());
+        final listModel = list.map((e) => BookModel.fromJson(e)).toList();
+        bestsellers.assignAll(listModel.where((b) => !b.isDeleted).toList());
       }
     } on DioException catch (e) {
       // Fallback: sort qua /books nếu service chưa rebuild.
@@ -111,7 +114,8 @@ class BookController extends GetxController {
         final fb = fallback.data;
         if (fb['success'] == true && fb['data']?['content'] is List) {
           final content = fb['data']['content'] as List;
-          bestsellers.assignAll(content.map((e) => BookModel.fromJson(e)).toList());
+          final listModel = content.map((e) => BookModel.fromJson(e)).toList();
+          bestsellers.assignAll(listModel.where((b) => !b.isDeleted).toList());
         }
       } on DioException {
         debugPrint('fetchBestsellers failed: ${e.response?.data ?? e.message}');
@@ -195,7 +199,8 @@ class BookController extends GetxController {
       if (body['success'] == true) {
         final pageData = body['data'];
         final content = pageData['content'] as List;
-        adminBooks.assignAll(content.map((e) => BookModel.fromJson(e)).toList());
+        final listModel = content.map((e) => BookModel.fromJson(e)).toList();
+        adminBooks.assignAll(listModel.where((b) => !b.isDeleted).toList());
         adminTotalPages.value = pageData['totalPages'] ?? 1;
       }
     } on DioException catch (e) {
@@ -231,7 +236,8 @@ class BookController extends GetxController {
       final body = response.data;
       if (body['success'] == true) {
         final content = body['data']['content'] as List;
-        adminAllBooks.assignAll(content.map((e) => BookModel.fromJson(e)).toList());
+        final listModel = content.map((e) => BookModel.fromJson(e)).toList();
+        adminAllBooks.assignAll(listModel.where((b) => !b.isDeleted).toList());
       }
     } on DioException catch (e) {
       Get.snackbar('Lỗi', e.response?.data?['message'] ?? 'Không thể tải sách');

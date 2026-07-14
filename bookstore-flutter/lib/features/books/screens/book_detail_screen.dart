@@ -71,7 +71,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_book == null) {
+    if (_book == null || _book!.isDeleted) {
       return const Scaffold(body: Center(child: Text('Không tìm thấy sách')));
     }
     final book = _book!;

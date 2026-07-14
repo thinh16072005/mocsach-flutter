@@ -9,6 +9,7 @@ class BookModel {
   final double avgRating;
   final int soldQuantity;
   final int discountPercent;
+  final bool isDeleted;
   final List<dynamic>? genres;
   final List<dynamic>? images;
 
@@ -23,6 +24,7 @@ class BookModel {
     required this.avgRating,
     required this.soldQuantity,
     required this.discountPercent,
+    required this.isDeleted,
     this.genres,
     this.images,
   });
@@ -39,6 +41,7 @@ class BookModel {
       avgRating: (json['avgRating'] ?? 0).toDouble(),
       soldQuantity: json['soldQuantity'] ?? 0,
       discountPercent: json['discountPercent'] ?? 0,
+      isDeleted: json['isDeleted'] ?? false,
       genres: json['genres'],
       images: json['images'],
     );
