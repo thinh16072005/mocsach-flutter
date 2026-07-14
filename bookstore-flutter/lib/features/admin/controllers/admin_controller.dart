@@ -15,6 +15,8 @@ class AdminController extends GetxController {
   final feedbacks = <dynamic>[].obs;
   final unreadFeedbackCount = 0.obs;
   final isLoading = false.obs;
+  final isLoadingMoreCoupons = false.obs;
+  final isLoadingMoreFeedbacks = false.obs;
 
   // Phân trang
   final couponPage = 0.obs;
@@ -149,9 +151,11 @@ class AdminController extends GetxController {
   }
 
   // ----- COUPONS -----
-  Future<void> fetchCoupons({int? page, int size = 10}) async {
+  Future<void> fetchCoupons({int? page, int size = 10, bool append = false}) async {
     if (page != null) couponPage.value = page;
-    isLoading.value = true;
+    if (couponPage.value == 0 && !append) {
+      isLoading.value = true;
+    }
     try {
       final resp = await _dio.get(ApiEndpoints.coupons, queryParameters: {
         'page': couponPage.value,
@@ -159,7 +163,12 @@ class AdminController extends GetxController {
       });
       if (resp.data['success'] == true) {
         final data = resp.data['data'];
-        coupons.assignAll(data['content'] as List);
+        final list = data['content'] as List;
+        if (couponPage.value == 0) {
+          coupons.assignAll(list);
+        } else {
+          coupons.addAll(list);
+        }
         couponTotalPages.value = data['totalPages'] ?? 1;
       }
     } on DioException catch (e) {
@@ -169,16 +178,15 @@ class AdminController extends GetxController {
     }
   }
 
-  void couponNextPage() {
-    if (couponPage.value < couponTotalPages.value - 1) {
-      fetchCoupons(page: couponPage.value + 1);
+  Future<void> loadMoreCoupons() async {
+    if (isLoading.value || isLoadingMoreCoupons.value || couponPage.value >= couponTotalPages.value - 1) {
+      return;
     }
-  }
-
-  void couponPrevPage() {
-    if (couponPage.value > 0) {
-      fetchCoupons(page: couponPage.value - 1);
-    }
+    isLoadingMoreCoupons.value = true;
+    await Future.delayed(const Duration(milliseconds: 1200));
+    couponPage.value++;
+    await fetchCoupons(append: true);
+    isLoadingMoreCoupons.value = false;
   }
 
   Future<bool> createCouponBatch(int quantity, int discountPercent, String expiryDate) async {
@@ -196,7 +204,13 @@ class AdminController extends GetxController {
   Future<void> toggleCoupon(int id) async {
     try {
       await _dio.put(ApiEndpoints.couponToggle(id));
-      fetchCoupons();
+      final index = coupons.indexWhere((c) => c['idCoupon'] == id);
+      if (index != -1) {
+        final Map<String, dynamic> c = Map<String, dynamic>.from(coupons[index]);
+        c['isActive'] = !(c['isActive'] ?? false);
+        coupons[index] = c;
+        coupons.refresh();
+      }
     } on DioException catch (e) {
       _error(e, 'Không thể đổi trạng thái mã');
     }
@@ -212,9 +226,11 @@ class AdminController extends GetxController {
   }
 
   // ----- FEEDBACKS -----
-  Future<void> fetchFeedbacks({int? page, int size = 10}) async {
+  Future<void> fetchFeedbacks({int? page, int size = 10, bool append = false}) async {
     if (page != null) feedbackPage.value = page;
-    isLoading.value = true;
+    if (feedbackPage.value == 0 && !append) {
+      isLoading.value = true;
+    }
     try {
       final resp = await _dio.get(ApiEndpoints.feedbacks, queryParameters: {
         'page': feedbackPage.value,
@@ -222,7 +238,12 @@ class AdminController extends GetxController {
       });
       if (resp.data['success'] == true) {
         final data = resp.data['data'];
-        feedbacks.assignAll(data['content'] as List);
+        final list = data['content'] as List;
+        if (feedbackPage.value == 0) {
+          feedbacks.assignAll(list);
+        } else {
+          feedbacks.addAll(list);
+        }
         feedbackTotalPages.value = data['totalPages'] ?? 1;
       }
       await fetchUnreadCount();
@@ -233,16 +254,15 @@ class AdminController extends GetxController {
     }
   }
 
-  void feedbackNextPage() {
-    if (feedbackPage.value < feedbackTotalPages.value - 1) {
-      fetchFeedbacks(page: feedbackPage.value + 1);
+  Future<void> loadMoreFeedbacks() async {
+    if (isLoading.value || isLoadingMoreFeedbacks.value || feedbackPage.value >= feedbackTotalPages.value - 1) {
+      return;
     }
-  }
-
-  void feedbackPrevPage() {
-    if (feedbackPage.value > 0) {
-      fetchFeedbacks(page: feedbackPage.value - 1);
-    }
+    isLoadingMoreFeedbacks.value = true;
+    await Future.delayed(const Duration(milliseconds: 1200));
+    feedbackPage.value++;
+    await fetchFeedbacks(append: true);
+    isLoadingMoreFeedbacks.value = false;
   }
 
   /// Đếm phản hồi chưa đọc (cho badge dashboard).
@@ -260,7 +280,14 @@ class AdminController extends GetxController {
   Future<void> markFeedbackRead(int id) async {
     try {
       await _dio.put(ApiEndpoints.feedbackRead(id));
-      fetchFeedbacks();
+      final index = feedbacks.indexWhere((f) => f['idFeedback'] == id);
+      if (index != -1) {
+        final Map<String, dynamic> f = Map<String, dynamic>.from(feedbacks[index]);
+        f['read'] = true;
+        feedbacks[index] = f;
+        feedbacks.refresh();
+      }
+      await fetchUnreadCount();
     } on DioException catch (e) {
       _error(e, 'Không thể đánh dấu đã đọc');
     }
@@ -270,6 +297,7 @@ class AdminController extends GetxController {
     try {
       await _dio.delete(ApiEndpoints.feedbackById(id));
       feedbacks.removeWhere((f) => f['idFeedback'] == id);
+      await fetchUnreadCount();
     } on DioException catch (e) {
       _error(e, 'Không thể xóa phản hồi');
     }

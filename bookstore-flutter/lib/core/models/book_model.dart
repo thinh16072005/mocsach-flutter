@@ -41,7 +41,7 @@ class BookModel {
       avgRating: (json['avgRating'] ?? 0).toDouble(),
       soldQuantity: json['soldQuantity'] ?? 0,
       discountPercent: json['discountPercent'] ?? 0,
-      isDeleted: json['isDeleted'] ?? false,
+      isDeleted: json['deleted'] ?? false,
       genres: json['genres'],
       images: json['images'],
     );
